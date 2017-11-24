@@ -1,0 +1,17 @@
+ext {
+    compileSdkVersion = 26
+    buildToolsVersion = "26.0.2"
+    applicationId = "com.xngpro.upload2firim"
+    minSdkVersion = 14
+    targetSdkVersion = 26
+    versionCode = 8
+    versionName = "1.2.6"
+
+    fir = [uploadUrl  : "http://api.fir.im/apps",
+           apiToken   : "a914b6482ed7c40523964456f90c2479",
+           bundleId   : applicationId,
+           versionName: versionName,
+           buildNum   : versionCode,
+           appName    : "Fir Demo",
+           changeLog  : "Hello Android"]
+}

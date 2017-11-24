@@ -1,0 +1,94 @@
+apply plugin: 'com.android.application'
+
+def releaseTime() {
+    return new Date().format("yyyyMMdd", TimeZone.getTimeZone("UTC"))
+}
+
+def apkFileName
+File signPropertiesFile = rootProject.file('./keystore.properties')
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId rootProject.ext.applicationId
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    if (signPropertiesFile.exists()) {
+        println "====== signPropertiesFile.exists() ======"
+        Properties properties = new Properties()
+        properties.load(new FileInputStream(signPropertiesFile))
+        signingConfigs {
+            release {
+                println "====== signingConfigs.release ======"
+                storeFile rootProject.file(properties["keystore"])
+                storePassword properties['storePassword']
+                keyAlias properties['keyAlias']
+                keyPassword properties['keyPassword']
+                v1SigningEnabled Boolean.valueOf(properties['v1SigningEnabled'])
+                v2SigningEnabled Boolean.valueOf(properties['v2SigningEnabled'])
+                println "v1SigningEnabled: " + Boolean.valueOf(properties['v1SigningEnabled'])
+                println "v2SigningEnabled: " + Boolean.valueOf(properties['v2SigningEnabled'])
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signPropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            applicationVariants.all { variant ->
+                if (variant.buildType.name.equals('release')) {
+                    variant.outputs.all {
+                        outputFileName = "demo_v${defaultConfig.versionName}_${releaseTime()}.apk"
+                        apkFileName = outputFileName
+                    }
+                }
+            }
+        }
+    }
+
+    task release2Firim() {
+        dependsOn 'assembleRelease'
+        doLast {
+            def uploadUrl = rootProject.ext.fir.uploadUrl
+            def bundleId = rootProject.ext.fir.bundleId
+            def apiToken = rootProject.ext.fir.apiToken
+            def appName = rootProject.ext.fir.appName
+            def buildNum = rootProject.ext.fir.buildNum
+            def versionName = rootProject.ext.fir.versionName
+            def changeLog = rootProject.ext.fir.changeLog
+            def iconPath = "./app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+            def apkPath = "./app/build/outputs/apk/release/" + apkFileName
+
+            def commands = ["python3", "upload2Fir.py", uploadUrl, bundleId, apiToken, appName, buildNum, versionName, changeLog, iconPath, apkPath] as String[]
+
+            println("======开始上传======")
+            Process process = commands.execute()
+            ByteArrayOutputStream result = new ByteArrayOutputStream()
+            def inputStream = process.getInputStream()
+            byte[] buffer = new byte[1024]
+            int length
+            while ((length = inputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length)
+            }
+            println(result.toString("UTF-8"))
+            println("======结束上传======")
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
