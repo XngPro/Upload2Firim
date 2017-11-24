@@ -8,7 +8,7 @@ ext {
     versionName = "1.2.6"
 
     fir = [uploadUrl  : "http://api.fir.im/apps",
-           apiToken   : "a914b6482ed7c40523964456f90c2479",
+           apiToken   : "Your fir API token",
            bundleId   : applicationId,
            versionName: versionName,
            buildNum   : versionCode,
